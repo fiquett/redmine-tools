@@ -175,6 +175,13 @@ class migrator
         }
     }
 
+    private function getNextProjectRgt()
+    {
+        $result = $this->dbNew->query('SELECT MAX(rgt) AS rgt FROM projects');
+        $maxRgt = $this->dbNew->getAssocArrays($result);
+        return $maxRgt[0]['rgt'];
+    }
+
     private function migrateCategories($idProjectOld)
     {
         $result = $this->dbOld->select('issue_categories', array('project_id' => $idProjectOld));
@@ -635,6 +642,12 @@ class migrator
 
         foreach ($projectsOld as $projectOld) {
             unset($projectOld['id']);
+
+            // get next insertion point for project hierarchy 
+            $rgt = $this->getNextProjectRgt();
+            $projectOld['lft'] = ($rgt+1);
+            $projectOld['rgt'] = ($rgt+2);
+
             $idProjectNew = $this->dbNew->insert('projects', $projectOld);
             $this->projectsMapping[$idProjectOld] = $idProjectNew;
             echo "migrating old redmine $idProjectOld => to new redmine $idProjectNew <br>\n";
